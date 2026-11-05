@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import { prisma } from "./config/database";
 
 const app = express();
 
@@ -21,5 +22,27 @@ app.get("/api/v1/health", (req, res) => {
         timestamp: new Date()
     });
 });
+
+
+app.get("/api/v1/db-test", async (req, res) => {
+    try {
+        const userCount = await prisma.user.count();
+
+        res.status(200).json({
+            success: true,
+            message: "Database query successful!",
+            totalUsers: userCount,
+        });
+
+    } catch (error) {
+        console.error("Database query failed:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Database query failed",
+        });
+    }
+});
+
 
 export default app;

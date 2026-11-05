@@ -1,0 +1,77 @@
+// Prisma Client configuration
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// PostgreSQL database
+datasource db {
+  provider = "postgresql"
+}
+
+// ===================================
+// ENUMS
+// ===================================
+
+enum LedgerEntryType {
+  INITIAL_FUNDING
+  DEPOSIT
+  WITHDRAWAL
+  TRADE_BUY
+  TRADE_SELL
+  ADJUSTMENT
+}
+
+// ===================================
+// USER
+// ===================================
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  displayName  String?
+
+  wallet       Wallet?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ===================================
+// WALLET
+// ===================================
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  currency  String   @default("USD")
+  balance   Decimal  @default(0) @db.Decimal(20, 8)
+
+  user      User     @relation(fields: [userId], references: [id])
+  entries   LedgerEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ===================================
+// LEDGER
+// ===================================
+
+model LedgerEntry {
+  id           String          @id @default(uuid())
+  walletId     String
+  type         LedgerEntryType
+  amount       Decimal         @db.Decimal(20, 8)
+  balanceAfter Decimal         @db.Decimal(20, 8)
+  description  String?
+  referenceId  String?
+
+  wallet       Wallet          @relation(fields: [walletId], references: [id])
+
+  createdAt    DateTime        @default(now())
+
+  @@index([walletId, createdAt])
+}
