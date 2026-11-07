@@ -4,6 +4,7 @@ import helmet from "helmet";
 import { prisma } from "./config/database";
 import authRoutes from "./modules/auth/auth.routes";
 import cookieParser from "cookie-parser";
+import walletRoutes from "./modules/wallet/wallet.routes";
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/wallet", walletRoutes);
 
 // Health check endpoint
 app.get("/api/v1/health", (req, res) => {
