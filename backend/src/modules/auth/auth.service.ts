@@ -38,8 +38,16 @@ export async function registerUser(data: RegisterInput) {
                     create: {
                         currency: "USD",
                         balance: 10000,
+                    entries: {
+                        create: {
+                            type: "INITIAL_FUNDING",
+                            amount: 10000,
+                            balanceAfter: 10000,
+                            description: "Initial virtual wallet funding",
+                        },
                     },
                 },
+            },
             },
             select: {
                 id: true,
@@ -54,7 +62,7 @@ export async function registerUser(data: RegisterInput) {
                     },
                 },
             },
-        });
+        })
     });
 
     
