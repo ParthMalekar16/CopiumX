@@ -2,7 +2,8 @@ import { Request, Response } from "express";
 import { registerSchema } from "./auth.validation";
 import { registerUser } from "./auth.service";
 import { loginSchema } from "./auth.validation";
-import { loginUser } from "./auth.service";     
+import { loginUser } from "./auth.service";
+import { prisma } from "../../config/database";     
 
 export async function registerController(
     req: Request,
@@ -114,4 +115,59 @@ export async function loginController(
         });
     }
 }
+
+
+export async function getMeController(
+    req: Request,
+    res: Response
+) {
+    try {
+        // Get the authenticated user's ID
+        const userId = req.user?.userId;
+
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required",
+            });
+        }
+
+        // Find the user in PostgreSQL
+        const user = await prisma.user.findUnique({
+            where: {
+                id: userId,
+            },
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                displayName: true,
+                createdAt: true,
+            },
+        });
+
+        // Check whether the user exists
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        // Return the user's profile
+        return res.status(200).json({
+            success: true,
+            user,
+        });
+
+    } catch (error) {
+        console.error("Get profile error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+}
+
 
