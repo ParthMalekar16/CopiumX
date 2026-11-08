@@ -34,6 +34,7 @@ model User {
   displayName  String?
 
   wallet       Wallet?
+  holdings Holding[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -74,4 +75,33 @@ model LedgerEntry {
   createdAt    DateTime        @default(now())
 
   @@index([walletId, createdAt])
+}
+model Asset {
+  id          String   @id @default(uuid())
+  symbol      String   @unique
+  name        String
+  coingeckoId String   @unique
+
+  holdings    Holding[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Holding {
+  id              String   @id @default(uuid())
+  userId          String
+  assetId         String
+
+  quantity        Decimal  @default(0) @db.Decimal(30, 12)
+  averageBuyPrice Decimal  @default(0) @db.Decimal(20, 8)
+
+  user            User     @relation(fields: [userId], references: [id])
+  asset           Asset    @relation(fields: [assetId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, assetId])
+  @@index([userId])
 }
