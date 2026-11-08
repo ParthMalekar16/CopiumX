@@ -1,11 +1,21 @@
 
 import "dotenv/config";
 import { prisma } from "../../config/database";
+import { getCachedPrices, setCachedPrices } from "./market.cache";
+import type { MarketPrice } from "./market.types";
 
 const COINGECKO_API_URL =
     "https://api.coingecko.com/api/v3/simple/price";
 
 export async function getMarketPrices() {
+    const cachedPrices = getCachedPrices();
+
+    if (cachedPrices) {
+        console.log("Market cache: HIT");
+        return cachedPrices;
+    }
+
+    console.log("Market cache: MISS");
     const apiKey = process.env.COINGECKO_API_KEY;
 
     if (!apiKey) {
@@ -51,22 +61,22 @@ export async function getMarketPrices() {
     const marketData = await response.json();
 
     // Match CoinGecko prices with our database assets.
-    const prices = assets.map((asset) => {
-        const coinData = marketData[asset.coingeckoId];
+    const prices: MarketPrice[] = assets.map((asset) => {
+    const coinData = marketData[asset.coingeckoId];
 
-        if (!coinData || typeof coinData.usd !== "number") {
-            throw new Error(
-                `Price unavailable for ${asset.symbol}`
-            );
-        }
+    if (!coinData || typeof coinData.usd !== "number") {
+        throw new Error(
+            `Price unavailable for ${asset.symbol}`
+        );
+    }
 
-        return {
-            symbol: asset.symbol,
-            name: asset.name,
-            price: coinData.usd,
-            priceChange24h: coinData.usd_24h_change ?? null,
-        };
-    });
-
+    return {
+        symbol: asset.symbol,
+        name: asset.name,
+        price: coinData.usd,
+        priceChange24h: coinData.usd_24h_change ?? null,
+    };
+});
+setCachedPrices(prices);
     return prices;
 }
