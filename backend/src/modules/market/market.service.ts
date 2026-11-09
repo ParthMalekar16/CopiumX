@@ -3,6 +3,7 @@ import "dotenv/config";
 import { prisma } from "../../config/database";
 import { getCachedPrices, setCachedPrices } from "./market.cache";
 import type { MarketPrice } from "./market.types";
+import Decimal from "decimal.js";
 
 const COINGECKO_API_URL =
     "https://api.coingecko.com/api/v3/simple/price";
@@ -80,3 +81,49 @@ export async function getMarketPrices() {
 setCachedPrices(prices);
     return prices;
 }
+
+
+export async function getFreshMarketPrice(symbol: string): Promise<Decimal> {
+    const apiKey = process.env.COINGECKO_API_KEY;
+
+    if (!apiKey) {
+        throw new Error("COINGECKO_API_KEY is not configured");
+    }
+
+    const asset = await prisma.asset.findUnique({
+        where: { symbol },
+    });
+
+    if (!asset) {
+        throw new Error("Unsupported cryptocurrency");
+    }
+
+    const params = new URLSearchParams({
+        ids: asset.coingeckoId,
+        vs_currencies: "usd",
+    });
+
+    const response = await fetch(
+        `${COINGECKO_API_URL}?${params.toString()}`,
+        {
+            headers: {
+                "x-cg-demo-api-key": apiKey,
+            },
+            signal: AbortSignal.timeout(10000),
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error(`CoinGecko API error: ${response.status}`);
+    }
+
+    const marketData = await response.json();
+    const price = marketData[asset.coingeckoId]?.usd;
+
+    if (typeof price !== "number" || !Number.isFinite(price) || price <= 0) {
+        throw new Error(`Invalid market price for ${symbol}`);
+    }
+
+    return new Decimal(String(price));
+}
+

@@ -22,6 +22,11 @@ enum LedgerEntryType {
   ADJUSTMENT
 }
 
+enum TradeSide {
+  BUY
+  SELL
+}
+
 // ===================================
 // USER
 // ===================================
@@ -35,6 +40,7 @@ model User {
 
   wallet       Wallet?
   holdings Holding[]
+  trades Trade[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -83,6 +89,7 @@ model Asset {
   coingeckoId String   @unique
 
   holdings    Holding[]
+  trades Trade[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -104,4 +111,27 @@ model Holding {
 
   @@unique([userId, assetId])
   @@index([userId])
+}
+
+model Trade {
+  id             String    @id @default(uuid())
+  userId         String
+  assetId        String
+
+  side           TradeSide
+  quantity       Decimal   @db.Decimal(30, 12)
+  price          Decimal   @db.Decimal(20, 8)
+  total          Decimal   @db.Decimal(30, 8)
+  fee            Decimal   @default(0) @db.Decimal(20, 8)
+
+  idempotencyKey String
+
+  user           User      @relation(fields: [userId], references: [id])
+  asset          Asset     @relation(fields: [assetId], references: [id])
+
+  executedAt     DateTime  @default(now())
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, executedAt])
+  @@index([assetId, executedAt])
 }
