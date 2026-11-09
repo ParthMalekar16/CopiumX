@@ -6,7 +6,7 @@ import authRoutes from "./modules/auth/auth.routes";
 import cookieParser from "cookie-parser";
 import walletRoutes from "./modules/wallet/wallet.routes";
 import marketRoutes from "./modules/market/market.routes";
-
+import tradeRoutes from "./modules/trade/trade.routes";
 const app = express();
 
 app.use(helmet());
@@ -21,7 +21,7 @@ app.use(cookieParser());
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/wallet", walletRoutes);
 app.use("/api/v1/market", marketRoutes);
-
+app.use("/api/v1/trades", tradeRoutes);
 // Health check endpoint
 app.get("/api/v1/health", (req, res) => {
     res.status(200).json({
